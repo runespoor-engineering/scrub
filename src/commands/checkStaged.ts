@@ -5,6 +5,7 @@ import { checkStagedFiles } from "../utils/core/checkStagedFiles/checkStagedFile
 export const checkStaged = async (options: {
 	rootDir?: string;
 	pattern?: string[];
+	disablingComment: string;
 }) => {
 	try {
 		const rootDir = options.rootDir || "./";
@@ -17,6 +18,7 @@ export const checkStaged = async (options: {
 		await checkStagedFiles({
 			rootDir,
 			filesRegex,
+			disablingComment: options.disablingComment,
 			onFileProcessed: (filePath) => {
 				console.log(INFO.fileChecked(filePath));
 			},

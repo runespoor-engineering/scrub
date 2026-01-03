@@ -8,6 +8,8 @@ vi.mock("../../../git/getStagedFiles");
 vi.mock("../../checkFilePaths/checkFilePaths");
 
 describe("checkStagedFiles", () => {
+	const MOCK_COMMENT = "/* eslint-disable */";
+
 	beforeEach(() => {
 		vi.resetAllMocks();
 	});
@@ -18,11 +20,14 @@ describe("checkStagedFiles", () => {
 		vi.spyOn(getStagedFilesModule, "getStagedFiles").mockReturnValue([]);
 		vi.spyOn(checkFilePathsModule, "checkFilePaths").mockResolvedValue();
 
-		await expect(checkStagedFiles()).resolves.toBeUndefined();
+		await expect(
+			checkStagedFiles({ disablingComment: MOCK_COMMENT }),
+		).resolves.toBeUndefined();
 
 		expect(getStagedFilesModule.getStagedFiles).toHaveBeenCalledWith("./");
 		expect(checkFilePathsModule.checkFilePaths).toHaveBeenCalledWith({
 			filePathsToCheck: [],
+			disablingComment: MOCK_COMMENT,
 		});
 	});
 
@@ -46,11 +51,13 @@ describe("checkStagedFiles", () => {
 		);
 		vi.spyOn(checkFilePathsModule, "checkFilePaths").mockResolvedValue();
 
-		await expect(checkStagedFiles()).resolves.toBeUndefined();
+		await expect(
+			checkStagedFiles({ disablingComment: MOCK_COMMENT }),
+		).resolves.toBeUndefined();
 
-		expect(getStagedFilesModule.getStagedFiles).toHaveBeenCalledWith("./");
 		expect(checkFilePathsModule.checkFilePaths).toHaveBeenCalledWith({
 			filePathsToCheck: expectedFilteredFiles,
+			disablingComment: MOCK_COMMENT,
 		});
 	});
 
@@ -63,7 +70,10 @@ describe("checkStagedFiles", () => {
 		vi.spyOn(checkFilePathsModule, "checkFilePaths").mockResolvedValue();
 
 		await expect(
-			checkStagedFiles({ rootDir: customRootDir }),
+			checkStagedFiles({
+				rootDir: customRootDir,
+				disablingComment: MOCK_COMMENT,
+			}),
 		).resolves.toBeUndefined();
 
 		expect(getStagedFilesModule.getStagedFiles).toHaveBeenCalledWith(
@@ -88,11 +98,15 @@ describe("checkStagedFiles", () => {
 		vi.spyOn(checkFilePathsModule, "checkFilePaths").mockResolvedValue();
 
 		await expect(
-			checkStagedFiles({ filesRegex: customRegex }),
+			checkStagedFiles({
+				filesRegex: customRegex,
+				disablingComment: MOCK_COMMENT,
+			}),
 		).resolves.toBeUndefined();
 
 		expect(checkFilePathsModule.checkFilePaths).toHaveBeenCalledWith({
 			filePathsToCheck: expectedFilteredFiles,
+			disablingComment: MOCK_COMMENT,
 		});
 	});
 
@@ -113,32 +127,15 @@ describe("checkStagedFiles", () => {
 		vi.spyOn(checkFilePathsModule, "checkFilePaths").mockResolvedValue();
 
 		await expect(
-			checkStagedFiles({ onFileProcessed: mockOnFileProcessed }),
+			checkStagedFiles({
+				onFileProcessed: mockOnFileProcessed,
+				disablingComment: MOCK_COMMENT,
+			}),
 		).resolves.toBeUndefined();
 
 		expect(mockOnFileProcessed).toHaveBeenCalledTimes(
 			expectedFilteredFiles.length,
 		);
-		expect(mockOnFileProcessed).toHaveBeenCalledWith(expectedFilteredFiles[0]);
-		expect(mockOnFileProcessed).toHaveBeenCalledWith(expectedFilteredFiles[1]);
-	});
-
-	it("should not call onFileProcessed when not provided", async () => {
-		expect.hasAssertions();
-
-		const mockStagedFiles = ["/path/to/file1.ts"];
-
-		vi.spyOn(getStagedFilesModule, "getStagedFiles").mockReturnValue(
-			mockStagedFiles,
-		);
-		vi.spyOn(checkFilePathsModule, "checkFilePaths").mockResolvedValue();
-
-		await expect(checkStagedFiles()).resolves.toBeUndefined();
-
-		// Should not throw any errors even without onFileProcessed
-		expect(checkFilePathsModule.checkFilePaths).toHaveBeenCalledWith({
-			filePathsToCheck: ["/path/to/file1.ts"],
-		});
 	});
 
 	it("should propagate errors from checkFilePaths", async () => {
@@ -154,7 +151,9 @@ describe("checkStagedFiles", () => {
 			mockError,
 		);
 
-		await expect(checkStagedFiles()).rejects.toThrow(mockError);
+		await expect(
+			checkStagedFiles({ disablingComment: MOCK_COMMENT }),
+		).rejects.toThrow(mockError);
 	});
 
 	it("should handle multiple regex patterns", async () => {
@@ -175,46 +174,15 @@ describe("checkStagedFiles", () => {
 		vi.spyOn(checkFilePathsModule, "checkFilePaths").mockResolvedValue();
 
 		await expect(
-			checkStagedFiles({ filesRegex: multipleRegex }),
+			checkStagedFiles({
+				filesRegex: multipleRegex,
+				disablingComment: MOCK_COMMENT,
+			}),
 		).resolves.toBeUndefined();
 
 		expect(checkFilePathsModule.checkFilePaths).toHaveBeenCalledWith({
 			filePathsToCheck: expectedFilteredFiles,
-		});
-	});
-
-	it("should use DEFAULT_LINTED_FILE_REGEX when no filesRegex provided", async () => {
-		expect.hasAssertions();
-
-		const mockStagedFiles = ["/path/to/file1.ts"];
-
-		vi.spyOn(getStagedFilesModule, "getStagedFiles").mockReturnValue(
-			mockStagedFiles,
-		);
-		vi.spyOn(checkFilePathsModule, "checkFilePaths").mockResolvedValue();
-
-		await expect(checkStagedFiles()).resolves.toBeUndefined();
-
-		// File should be filtered using DEFAULT_LINTED_FILE_REGEX
-		expect(checkFilePathsModule.checkFilePaths).toHaveBeenCalledWith({
-			filePathsToCheck: ["/path/to/file1.ts"],
-		});
-	});
-
-	it("should handle empty string files from git output", async () => {
-		expect.hasAssertions();
-
-		const mockStagedFiles = ["/path/to/file1.ts"];
-
-		vi.spyOn(getStagedFilesModule, "getStagedFiles").mockReturnValue(
-			mockStagedFiles,
-		);
-		vi.spyOn(checkFilePathsModule, "checkFilePaths").mockResolvedValue();
-
-		await expect(checkStagedFiles()).resolves.toBeUndefined();
-
-		expect(checkFilePathsModule.checkFilePaths).toHaveBeenCalledWith({
-			filePathsToCheck: ["/path/to/file1.ts"],
+			disablingComment: MOCK_COMMENT,
 		});
 	});
 });

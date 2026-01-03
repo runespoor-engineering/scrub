@@ -18,16 +18,18 @@ describe("disableFiles", () => {
 		.spyOn(console, "error")
 		.mockImplementation(() => {});
 
+	const MOCK_COMMENT = "/* test-disable-comment */";
+
 	beforeEach(() => {
 		vi.resetAllMocks();
 	});
 
-	it("should add eslint-disable to files that do not have it", async () => {
+	it("should add the provided disablingComment to files that do not have it", async () => {
 		expect.hasAssertions();
 
 		const mockFiles = ["file1.ts", "file2.ts"];
 		const mockContent = "export const test = true;";
-		const expectedContent = `/* eslint-disable */\n\n${mockContent}`;
+		const expectedContent = `${MOCK_COMMENT}\n\n${mockContent}`;
 
 		vi.spyOn(getDeepFilesFromDirModule, "getDeepFilesFromDir").mockReturnValue(
 			mockFiles,
@@ -38,12 +40,16 @@ describe("disableFiles", () => {
 				callback(null, mockContent);
 			},
 		);
+
 		// @ts-expect-error - types are not needed here
 		vi.mocked(fs.writeFile).mockImplementation((_, __, ___, callback) => {
 			callback(null);
 		});
 
-		await disableFiles({ filesRegex: [/\.ts$/] });
+		await disableFiles({
+			filesRegex: [/\.ts$/],
+			disablingComment: MOCK_COMMENT,
+		});
 
 		expect(fs.writeFile).toHaveBeenCalledWith(
 			expect.stringContaining("file"),
@@ -54,11 +60,11 @@ describe("disableFiles", () => {
 		expect(fs.writeFile).toHaveBeenCalledTimes(2);
 	});
 
-	it("should skip files that already have eslint-disable", async () => {
+	it("should skip files that already have the disablingComment", async () => {
 		expect.hasAssertions();
 
 		const mockFiles = ["file1.ts"];
-		const mockContent = "/* eslint-disable */\nexport const test = true;";
+		const mockContent = `${MOCK_COMMENT}\nexport const test = true;`;
 
 		vi.spyOn(getDeepFilesFromDirModule, "getDeepFilesFromDir").mockReturnValue(
 			mockFiles,
@@ -70,7 +76,11 @@ describe("disableFiles", () => {
 			},
 		);
 
-		await disableFiles({ rootDir: "./", filesRegex: [/\.ts$/] });
+		await disableFiles({
+			rootDir: "./",
+			filesRegex: [/\.ts$/],
+			disablingComment: MOCK_COMMENT,
+		});
 
 		expect(fs.writeFile).not.toHaveBeenCalled();
 	});
@@ -79,7 +89,6 @@ describe("disableFiles", () => {
 		expect.hasAssertions();
 
 		const mockFiles = ["file1.ts"];
-		const mockContent = "/* eslint-disable */\nexport const test = true;";
 
 		vi.spyOn(getDeepFilesFromDirModule, "getDeepFilesFromDir").mockReturnValue(
 			mockFiles,
@@ -91,7 +100,11 @@ describe("disableFiles", () => {
 			},
 		);
 
-		await disableFiles({ rootDir: "./", filesRegex: [/\.ts$/] });
+		await disableFiles({
+			rootDir: "./",
+			filesRegex: [/\.ts$/],
+			disablingComment: MOCK_COMMENT,
+		});
 
 		expect(fs.writeFile).not.toHaveBeenCalled();
 	});
@@ -112,7 +125,11 @@ describe("disableFiles", () => {
 			},
 		);
 
-		await disableFiles({ rootDir: "./", filesRegex: [/\.ts$/] });
+		await disableFiles({
+			rootDir: "./",
+			filesRegex: [/\.ts$/],
+			disablingComment: MOCK_COMMENT,
+		});
 
 		expect(mockConsoleError).toHaveBeenCalledWith(
 			ERRORS.readFileError("./file1.ts"),
@@ -137,6 +154,7 @@ describe("disableFiles", () => {
 				callback(null, mockContent);
 			},
 		);
+
 		// @ts-expect-error - types are not needed here
 		vi.mocked(fs.writeFile).mockImplementation((_, __, ___, callback) => {
 			callback(mockError);
@@ -146,6 +164,7 @@ describe("disableFiles", () => {
 			rootDir: "./",
 			filesRegex: [/\.ts$/],
 			onFileProcessed: mockOnFileProcessed,
+			disablingComment: MOCK_COMMENT,
 		});
 
 		expect(mockConsoleError).toHaveBeenCalledWith(
@@ -154,7 +173,7 @@ describe("disableFiles", () => {
 		expect(mockOnFileProcessed).not.toHaveBeenCalled();
 	});
 
-	it("should call onFileProcessed for each file processed", async () => {
+	it("should call onFileProcessed for each file processed successfully", async () => {
 		expect.hasAssertions();
 
 		const mockFiles = ["file1.ts"];
@@ -169,6 +188,7 @@ describe("disableFiles", () => {
 				callback(null, "content");
 			},
 		);
+
 		// @ts-expect-error - types are not needed here
 		vi.mocked(fs.writeFile).mockImplementation((_, __, ___, callback) => {
 			callback(null);
@@ -178,6 +198,7 @@ describe("disableFiles", () => {
 			rootDir: "./",
 			filesRegex: [/\.ts$/],
 			onFileProcessed: mockOnFileProcessed,
+			disablingComment: MOCK_COMMENT,
 		});
 
 		expect(mockOnFileProcessed).toHaveBeenCalledTimes(1);

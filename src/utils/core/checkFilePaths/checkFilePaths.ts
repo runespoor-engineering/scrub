@@ -1,5 +1,4 @@
 import path from "node:path";
-import { ESLINT_DISABLE_FILES } from "../../../constants/disabling-comments";
 import { ERRORS } from "../../../constants/messages";
 import { readFileStream } from "../../fs/readFileStream/readFileStream";
 
@@ -7,13 +6,16 @@ import { readFileStream } from "../../fs/readFileStream/readFileStream";
  * Checks if files contain the disabling comment and throws an error if they do
  * @param {Object} options - Configuration options
  * @param {string[]} [options.filePathsToCheck=[]] - Array of file paths to check
+ * @param {string} [options.disablingComment] - Disabling comment that will be checked in the file, e.g. \/* eslint-disable *\/
  * @returns {Promise<void>} Promise that resolves when all files have been checked, or rejects if any file contains disabling comment
  */
 export const checkFilePaths = async ({
 	filePathsToCheck = [],
+	disablingComment,
 }: {
 	filePathsToCheck?: string[];
-} = {}) => {
+	disablingComment: string;
+}) => {
 	const errors: string[] = [];
 
 	return new Promise<void>((resolve, reject) => {
@@ -33,7 +35,7 @@ export const checkFilePaths = async ({
 					errors.push(ERRORS.readFileError(filePath));
 				} else if (data) {
 					const content = data.toString();
-					if (content.trim().startsWith(ESLINT_DISABLE_FILES)) {
+					if (content.trim().startsWith(disablingComment)) {
 						errors.push(ERRORS.disableFoundError(filePath));
 					}
 				}
