@@ -28,6 +28,10 @@ program
 		"-p, --pattern <regex...>",
 		"regex pattern to match files against (e.g. \\.[cm]?[jt]sx?$ \\.test\\.[cm]?[jt]sx?$)",
 	)
+	.option(
+		"-d, --disablingComment <comment>",
+		"Disabling comment that will be added to the top of the file, (e.g. \/* eslint-disable *\/)",
+	)
 	.action(disable);
 
 program
@@ -40,6 +44,10 @@ program
 		"-p, --pattern <regex...>",
 		"regex pattern to match files against (e.g. \\.[cm]?[jt]sx?$ \\.test\\.[cm]?[jt]sx?$)",
 	)
+	.option(
+		"-d, --disablingComment <comment>",
+		"Disabling comment that will be checked in the file, (e.g. \/* eslint-disable *\/)",
+	)
 	.action(check);
 
 program
@@ -51,6 +59,10 @@ program
 	.option(
 		"-p, --pattern <regex...>",
 		"regex pattern to match files against (e.g. \\.[cm]?[jt]sx?$ \\.test\\.[cm]?[jt]sx?$)",
+	)
+	.option(
+		"-d, --disablingComment <comment>",
+		"Disabling comment that will be checked in the file, (e.g. \/* eslint-disable *\/)",
 	)
 	.action(checkStaged);
 

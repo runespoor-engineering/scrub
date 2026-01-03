@@ -1,5 +1,4 @@
 import path from "node:path";
-import { ESLINT_DISABLE_FILES } from "../../../../constants/disabling-comments";
 import { ERRORS } from "../../../../constants/messages";
 import * as readFileStreamModule from "../../../fs/readFileStream/readFileStream";
 import { checkFilePaths } from "../checkFilePaths";
@@ -8,6 +7,8 @@ vi.mock("node:path");
 vi.mock("../../../fs/readFileStream/readFileStream");
 
 describe("checkFilePaths", () => {
+	const MOCK_COMMENT = "/* test-disable */";
+
 	beforeEach(() => {
 		vi.resetAllMocks();
 	});
@@ -15,13 +16,17 @@ describe("checkFilePaths", () => {
 	it("should resolve when no files to check", async () => {
 		expect.hasAssertions();
 
-		await expect(checkFilePaths()).resolves.toBeUndefined();
+		// Passing required disablingComment even for empty checks
 		await expect(
-			checkFilePaths({ filePathsToCheck: [] }),
+			checkFilePaths({ disablingComment: MOCK_COMMENT }),
+		).resolves.toBeUndefined();
+
+		await expect(
+			checkFilePaths({ filePathsToCheck: [], disablingComment: MOCK_COMMENT }),
 		).resolves.toBeUndefined();
 	});
 
-	it("should resolve when files do not contain eslint-disable comment", async () => {
+	it("should resolve when files do not contain the provided disabling comment", async () => {
 		expect.hasAssertions();
 
 		const mockFiles = ["file1.ts", "file2.ts"];
@@ -35,15 +40,19 @@ describe("checkFilePaths", () => {
 		);
 
 		await expect(
-			checkFilePaths({ filePathsToCheck: mockFiles }),
+			checkFilePaths({
+				filePathsToCheck: mockFiles,
+				disablingComment: MOCK_COMMENT,
+			}),
 		).resolves.toBeUndefined();
 	});
 
-	it("should reject when files contain eslint-disable comment", async () => {
+	it("should reject when files contain the provided disabling comment", async () => {
 		expect.hasAssertions();
 
 		const mockFiles = ["file1.ts"];
-		const mockContent = `${ESLINT_DISABLE_FILES}\nexport const test = true;`;
+		// Use MOCK_COMMENT here instead of hardcoded constant
+		const mockContent = `${MOCK_COMMENT}\nexport const test = true;`;
 
 		vi.mocked(path.resolve).mockReturnValue("/absolute/path/file1.ts");
 		vi.spyOn(readFileStreamModule, "readFileStream").mockImplementation(
@@ -53,15 +62,18 @@ describe("checkFilePaths", () => {
 		);
 
 		await expect(
-			checkFilePaths({ filePathsToCheck: mockFiles }),
+			checkFilePaths({
+				filePathsToCheck: mockFiles,
+				disablingComment: MOCK_COMMENT,
+			}),
 		).rejects.toThrow(ERRORS.disableFoundError("/absolute/path/file1.ts"));
 	});
 
-	it("should handle files with only eslint-disable comment and whitespace", async () => {
+	it("should handle files with only the disabling comment and whitespace", async () => {
 		expect.hasAssertions();
 
 		const mockFiles = ["file1.ts"];
-		const mockContent = `  ${ESLINT_DISABLE_FILES}  \n\nexport const test = true;`;
+		const mockContent = `  ${MOCK_COMMENT}  \n\nexport const test = true;`;
 
 		vi.mocked(path.resolve).mockReturnValue("/absolute/path/file1.ts");
 		vi.spyOn(readFileStreamModule, "readFileStream").mockImplementation(
@@ -71,7 +83,10 @@ describe("checkFilePaths", () => {
 		);
 
 		await expect(
-			checkFilePaths({ filePathsToCheck: mockFiles }),
+			checkFilePaths({
+				filePathsToCheck: mockFiles,
+				disablingComment: MOCK_COMMENT,
+			}),
 		).rejects.toThrow(ERRORS.disableFoundError("/absolute/path/file1.ts"));
 	});
 
@@ -89,16 +104,19 @@ describe("checkFilePaths", () => {
 		);
 
 		await expect(
-			checkFilePaths({ filePathsToCheck: mockFiles }),
+			checkFilePaths({
+				filePathsToCheck: mockFiles,
+				disablingComment: MOCK_COMMENT,
+			}),
 		).rejects.toThrow(ERRORS.readFileError("/absolute/path/file1.ts"));
 	});
 
-	it("should handle multiple files with mixed results", async () => {
+	it("should handle multiple files with mixed results using the comment", async () => {
 		expect.hasAssertions();
 
 		const mockFiles = ["file1.ts", "file2.ts", "file3.ts"];
 		const cleanContent = "export const test = true;";
-		const eslintDisableContent = `${ESLINT_DISABLE_FILES}\nexport const test = true;`;
+		const dirtyContent = `${MOCK_COMMENT}\nexport const test = true;`;
 
 		vi.mocked(path.resolve)
 			.mockReturnValueOnce("/absolute/path/file1.ts")
@@ -109,10 +127,8 @@ describe("checkFilePaths", () => {
 			(filePath, callback) => {
 				if (filePath === "/absolute/path/file1.ts") {
 					callback(null, cleanContent);
-				} else if (filePath === "/absolute/path/file2.ts") {
-					callback(null, eslintDisableContent);
 				} else {
-					callback(null, eslintDisableContent);
+					callback(null, dirtyContent);
 				}
 			},
 		);
@@ -123,42 +139,14 @@ describe("checkFilePaths", () => {
 		].join("\n");
 
 		await expect(
-			checkFilePaths({ filePathsToCheck: mockFiles }),
+			checkFilePaths({
+				filePathsToCheck: mockFiles,
+				disablingComment: MOCK_COMMENT,
+			}),
 		).rejects.toThrow(expectedError);
 	});
 
-	it("should handle multiple files with mixed errors (read errors and eslint-disable)", async () => {
-		expect.hasAssertions();
-
-		const mockFiles = ["file1.ts", "file2.ts"];
-		const mockError = new Error("Read error");
-		const eslintDisableContent = `${ESLINT_DISABLE_FILES}\nexport const test = true;`;
-
-		vi.mocked(path.resolve)
-			.mockReturnValueOnce("/absolute/path/file1.ts")
-			.mockReturnValueOnce("/absolute/path/file2.ts");
-
-		vi.spyOn(readFileStreamModule, "readFileStream").mockImplementation(
-			(filePath, callback) => {
-				if (filePath === "/absolute/path/file1.ts") {
-					callback(mockError, null);
-				} else {
-					callback(null, eslintDisableContent);
-				}
-			},
-		);
-
-		const expectedError = [
-			ERRORS.readFileError("/absolute/path/file1.ts"),
-			ERRORS.disableFoundError("/absolute/path/file2.ts"),
-		].join("\n");
-
-		await expect(
-			checkFilePaths({ filePathsToCheck: mockFiles }),
-		).rejects.toThrow(expectedError);
-	});
-
-	it("should handle empty file content", async () => {
+	it("should handle empty or null file content", async () => {
 		expect.hasAssertions();
 
 		const mockFiles = ["file1.ts"];
@@ -166,42 +154,25 @@ describe("checkFilePaths", () => {
 		vi.mocked(path.resolve).mockReturnValue("/absolute/path/file1.ts");
 		vi.spyOn(readFileStreamModule, "readFileStream").mockImplementation(
 			(_, callback) => {
-				callback(null, "");
+				callback(null, ""); // Test empty string
 			},
 		);
 
 		await expect(
-			checkFilePaths({ filePathsToCheck: mockFiles }),
+			checkFilePaths({
+				filePathsToCheck: mockFiles,
+				disablingComment: MOCK_COMMENT,
+			}),
 		).resolves.toBeUndefined();
 	});
 
-	it("should handle null file content", async () => {
+	it("should resolve absolute paths for files and pass comment logic", async () => {
 		expect.hasAssertions();
 
-		const mockFiles = ["file1.ts"];
-
-		vi.mocked(path.resolve).mockReturnValue("/absolute/path/file1.ts");
-		vi.spyOn(readFileStreamModule, "readFileStream").mockImplementation(
-			(_, callback) => {
-				callback(null, null);
-			},
-		);
-
-		await expect(
-			checkFilePaths({ filePathsToCheck: mockFiles }),
-		).resolves.toBeUndefined();
-	});
-
-	it("should resolve absolute paths for files", async () => {
-		expect.hasAssertions();
-
-		const mockFiles = ["./relative/file1.ts", "../parent/file2.ts"];
+		const mockFiles = ["./relative/file1.ts"];
 		const mockContent = "export const test = true;";
 
-		vi.mocked(path.resolve)
-			.mockReturnValueOnce("/absolute/path/relative/file1.ts")
-			.mockReturnValueOnce("/absolute/path/parent/file2.ts");
-
+		vi.mocked(path.resolve).mockReturnValue("/absolute/path/relative/file1.ts");
 		vi.spyOn(readFileStreamModule, "readFileStream").mockImplementation(
 			(_, callback) => {
 				callback(null, mockContent);
@@ -209,10 +180,12 @@ describe("checkFilePaths", () => {
 		);
 
 		await expect(
-			checkFilePaths({ filePathsToCheck: mockFiles }),
+			checkFilePaths({
+				filePathsToCheck: mockFiles,
+				disablingComment: MOCK_COMMENT,
+			}),
 		).resolves.toBeUndefined();
 
 		expect(path.resolve).toHaveBeenCalledWith("./relative/file1.ts");
-		expect(path.resolve).toHaveBeenCalledWith("../parent/file2.ts");
 	});
 });

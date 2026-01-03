@@ -7,23 +7,21 @@ import { checkFilePaths } from "../checkFilePaths/checkFilePaths";
  * @param {Object} options - Configuration options
  * @param {string} [options.rootDir='./'] - Directory path to start searching from
  * @param {RegExp[]} [options.filesRegex=[DEFAULT_LINTED_FILE_REGEX]] - Array of RegExp patterns to match files against
+ * @param {string} [options.disablingComment] - Disabling comment that will be checked in the file, e.g. \/* eslint-disable *\/
  * @returns {Promise<void>} Promise that resolves when all files have been checked, or rejects if any file contains disabling comment
  */
-export const checkFiles = async (
-	{
-		rootDir = "./",
-		filesRegex = [DEFAULT_LINTED_FILE_REGEX],
-	}: {
-		rootDir?: string;
-		filesRegex?: RegExp[];
-	} = {
-		rootDir: "./",
-		filesRegex: [DEFAULT_LINTED_FILE_REGEX],
-	},
-) => {
+export const checkFiles = async ({
+	rootDir = "./",
+	filesRegex = [DEFAULT_LINTED_FILE_REGEX],
+	disablingComment,
+}: {
+	rootDir?: string;
+	filesRegex?: RegExp[];
+	disablingComment: string;
+}) => {
 	// Get all files from the directory that match the regex patterns
 	const filePathsToCheck = getDeepFilesFromDir(rootDir, filesRegex);
 
 	// Check the files for eslint-disable comments
-	return checkFilePaths({ filePathsToCheck });
+	return checkFilePaths({ filePathsToCheck, disablingComment });
 };

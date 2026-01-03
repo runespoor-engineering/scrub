@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { ESLINT_DISABLE_FILES } from "../../../constants/disabling-comments";
 import { ERRORS } from "../../../constants/messages";
 import { DEFAULT_LINTED_FILE_REGEX } from "../../../constants/regex";
 import { getDeepFilesFromDir } from "../../fs/getDeepFilesFromDir/getDeepFilesFromDir";
@@ -12,23 +11,20 @@ import { readFileStream } from "../../fs/readFileStream/readFileStream";
  * @param {string} [options.rootDir=./] - Directory path to start searching from
  * @param {RegExp[]} [options.filesRegex=[/\.[cm]?[jt]sx?$/]] - Array of RegExp patterns to match files against
  * @param {function} [options.onFileProcessed] - Callback function called after each file is processed with the file path
+ * @param {string} [options.disablingComment] - Disabling comment that will be added to the top of the file, e.g. \/* eslint-disable *\/
  * @returns {Promise<void[]>} Promise that resolves when all files have been processed
  */
-export const disableFiles = async (
-	{
-		rootDir = "./",
-		filesRegex = [DEFAULT_LINTED_FILE_REGEX],
-		onFileProcessed = () => {},
-	}: {
-		rootDir?: string;
-		filesRegex?: RegExp[];
-		onFileProcessed?: (filePath: string) => void;
-	} = {
-		rootDir: "./",
-		filesRegex: [DEFAULT_LINTED_FILE_REGEX],
-		onFileProcessed: () => {},
-	},
-) => {
+export const disableFiles = async ({
+	rootDir = "./",
+	filesRegex = [DEFAULT_LINTED_FILE_REGEX],
+	onFileProcessed = () => {},
+	disablingComment,
+}: {
+	rootDir?: string;
+	filesRegex?: RegExp[];
+	onFileProcessed?: (filePath: string) => void;
+	disablingComment: string;
+}) => {
 	const files = getDeepFilesFromDir(rootDir, filesRegex);
 
 	return Promise.all(
@@ -41,8 +37,8 @@ export const disableFiles = async (
 					return;
 				}
 				const content = data?.toString();
-				if (content && !content.trim().startsWith(ESLINT_DISABLE_FILES)) {
-					const updatedContents = `${ESLINT_DISABLE_FILES}\n\n${content}`;
+				if (content && !content.trim().startsWith(disablingComment)) {
+					const updatedContents = `${disablingComment}\n\n${content}`;
 					fs.writeFile(filePath, updatedContents, "utf8", (writeErr) => {
 						if (writeErr) {
 							console.error(ERRORS.writeFileError(filePath));

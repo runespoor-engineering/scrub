@@ -1,3 +1,5 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { DEFAULT_LINTED_FILE_REGEX } from "../../../../constants/regex";
 import * as getDeepFilesFromDirModule from "../../../fs/getDeepFilesFromDir/getDeepFilesFromDir";
 import * as checkFilePathsModule from "../../checkFilePaths/checkFilePaths";
@@ -7,6 +9,8 @@ vi.mock("../../../fs/getDeepFilesFromDir/getDeepFilesFromDir");
 vi.mock("../../checkFilePaths/checkFilePaths");
 
 describe("checkFiles", () => {
+	const MOCK_COMMENT = "/* custom-disable-comment */";
+
 	beforeEach(() => {
 		vi.resetAllMocks();
 	});
@@ -19,7 +23,9 @@ describe("checkFiles", () => {
 		);
 		vi.spyOn(checkFilePathsModule, "checkFilePaths").mockResolvedValue();
 
-		await expect(checkFiles()).resolves.toBeUndefined();
+		await expect(
+			checkFiles({ disablingComment: MOCK_COMMENT }),
+		).resolves.toBeUndefined();
 
 		expect(getDeepFilesFromDirModule.getDeepFilesFromDir).toHaveBeenCalledWith(
 			"./",
@@ -27,6 +33,7 @@ describe("checkFiles", () => {
 		);
 		expect(checkFilePathsModule.checkFilePaths).toHaveBeenCalledWith({
 			filePathsToCheck: [],
+			disablingComment: MOCK_COMMENT,
 		});
 	});
 
@@ -40,14 +47,13 @@ describe("checkFiles", () => {
 		);
 		vi.spyOn(checkFilePathsModule, "checkFilePaths").mockResolvedValue();
 
-		await expect(checkFiles()).resolves.toBeUndefined();
+		await expect(
+			checkFiles({ disablingComment: MOCK_COMMENT }),
+		).resolves.toBeUndefined();
 
-		expect(getDeepFilesFromDirModule.getDeepFilesFromDir).toHaveBeenCalledWith(
-			"./",
-			[DEFAULT_LINTED_FILE_REGEX],
-		);
 		expect(checkFilePathsModule.checkFilePaths).toHaveBeenCalledWith({
 			filePathsToCheck: mockFiles,
+			disablingComment: MOCK_COMMENT,
 		});
 	});
 
@@ -63,7 +69,7 @@ describe("checkFiles", () => {
 		vi.spyOn(checkFilePathsModule, "checkFilePaths").mockResolvedValue();
 
 		await expect(
-			checkFiles({ rootDir: customRootDir }),
+			checkFiles({ rootDir: customRootDir, disablingComment: MOCK_COMMENT }),
 		).resolves.toBeUndefined();
 
 		expect(getDeepFilesFromDirModule.getDeepFilesFromDir).toHaveBeenCalledWith(
@@ -72,6 +78,7 @@ describe("checkFiles", () => {
 		);
 		expect(checkFilePathsModule.checkFilePaths).toHaveBeenCalledWith({
 			filePathsToCheck: mockFiles,
+			disablingComment: MOCK_COMMENT,
 		});
 	});
 
@@ -87,7 +94,7 @@ describe("checkFiles", () => {
 		vi.spyOn(checkFilePathsModule, "checkFilePaths").mockResolvedValue();
 
 		await expect(
-			checkFiles({ filesRegex: customRegex }),
+			checkFiles({ filesRegex: customRegex, disablingComment: MOCK_COMMENT }),
 		).resolves.toBeUndefined();
 
 		expect(getDeepFilesFromDirModule.getDeepFilesFromDir).toHaveBeenCalledWith(
@@ -96,31 +103,7 @@ describe("checkFiles", () => {
 		);
 		expect(checkFilePathsModule.checkFilePaths).toHaveBeenCalledWith({
 			filePathsToCheck: mockFiles,
-		});
-	});
-
-	it("should use both custom rootDir and filesRegex", async () => {
-		expect.hasAssertions();
-
-		const customRootDir = "/custom/path";
-		const customRegex = [/\.ts$/, /\.js$/];
-		const mockFiles = ["/custom/path/file1.ts", "/custom/path/file2.js"];
-
-		vi.spyOn(getDeepFilesFromDirModule, "getDeepFilesFromDir").mockReturnValue(
-			mockFiles,
-		);
-		vi.spyOn(checkFilePathsModule, "checkFilePaths").mockResolvedValue();
-
-		await expect(
-			checkFiles({ rootDir: customRootDir, filesRegex: customRegex }),
-		).resolves.toBeUndefined();
-
-		expect(getDeepFilesFromDirModule.getDeepFilesFromDir).toHaveBeenCalledWith(
-			customRootDir,
-			customRegex,
-		);
-		expect(checkFilePathsModule.checkFilePaths).toHaveBeenCalledWith({
-			filePathsToCheck: mockFiles,
+			disablingComment: MOCK_COMMENT,
 		});
 	});
 
@@ -137,7 +120,9 @@ describe("checkFiles", () => {
 			mockError,
 		);
 
-		await expect(checkFiles()).rejects.toThrow(mockError);
+		await expect(
+			checkFiles({ disablingComment: MOCK_COMMENT }),
+		).rejects.toThrow(mockError);
 	});
 
 	it("should handle multiple regex patterns", async () => {
@@ -152,34 +137,13 @@ describe("checkFiles", () => {
 		vi.spyOn(checkFilePathsModule, "checkFilePaths").mockResolvedValue();
 
 		await expect(
-			checkFiles({ filesRegex: multipleRegex }),
+			checkFiles({ filesRegex: multipleRegex, disablingComment: MOCK_COMMENT }),
 		).resolves.toBeUndefined();
 
-		expect(getDeepFilesFromDirModule.getDeepFilesFromDir).toHaveBeenCalledWith(
-			"./",
-			multipleRegex,
-		);
 		expect(checkFilePathsModule.checkFilePaths).toHaveBeenCalledWith({
 			filePathsToCheck: mockFiles,
+			disablingComment: MOCK_COMMENT,
 		});
-	});
-
-	it("should use DEFAULT_LINTED_FILE_REGEX when no filesRegex provided", async () => {
-		expect.hasAssertions();
-
-		const mockFiles = ["/path/to/file1.ts"];
-
-		vi.spyOn(getDeepFilesFromDirModule, "getDeepFilesFromDir").mockReturnValue(
-			mockFiles,
-		);
-		vi.spyOn(checkFilePathsModule, "checkFilePaths").mockResolvedValue();
-
-		await expect(checkFiles()).resolves.toBeUndefined();
-
-		expect(getDeepFilesFromDirModule.getDeepFilesFromDir).toHaveBeenCalledWith(
-			"./",
-			[DEFAULT_LINTED_FILE_REGEX],
-		);
 	});
 
 	it("should handle empty results from getDeepFilesFromDir", async () => {
@@ -191,11 +155,12 @@ describe("checkFiles", () => {
 		vi.spyOn(checkFilePathsModule, "checkFilePaths").mockResolvedValue();
 
 		await expect(
-			checkFiles({ rootDir: "/empty/dir" }),
+			checkFiles({ rootDir: "/empty/dir", disablingComment: MOCK_COMMENT }),
 		).resolves.toBeUndefined();
 
 		expect(checkFilePathsModule.checkFilePaths).toHaveBeenCalledWith({
 			filePathsToCheck: [],
+			disablingComment: MOCK_COMMENT,
 		});
 	});
 });

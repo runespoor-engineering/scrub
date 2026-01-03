@@ -5,6 +5,7 @@ import { checkFiles } from "../utils/core/checkFiles/checkFiles";
 export const check = async (options: {
 	rootDir?: string;
 	pattern?: string[];
+	disablingComment: string;
 }) => {
 	try {
 		const rootDir = options.rootDir || "./";
@@ -17,6 +18,7 @@ export const check = async (options: {
 		await checkFiles({
 			rootDir,
 			filesRegex,
+			disablingComment: options.disablingComment,
 		});
 
 		console.log(SUCCESS.cleanFiles());
