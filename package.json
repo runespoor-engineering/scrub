@@ -47,7 +47,7 @@
 	"homepage": "https://github.com/runespoor-engineering/scrub/#readme",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/runespoor-engineering/scrub"
+		"url": "git+https://github.com/runespoor-engineering/scrub.git"
 	},
 	"bugs": {
 		"url": "https://github.com/runespoor-engineering/scrub/issues"
