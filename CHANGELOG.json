@@ -1,5 +1,12 @@
 [
 	{
+		"version": "1.0.1",
+		"type": "patch",
+		"comment": "Adjust CLI version",
+		"date": "Sun Jan 04 2026",
+		"author": "Boris Shuliak"
+	},
+	{
 		"version": "1.0.0",
 		"type": "major",
 		"comment": "Add README file.\n\nProvide `--disableComment` option to `disable`, `check`, `check-staged` commands. Remove hadrcoded `eslint-disable` disabling comment",

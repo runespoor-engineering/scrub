@@ -1,6 +1,6 @@
 {
 	"name": "@runespoorstack/scrub",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "The automated janitor for your codebase. Stop the rot, clean the debt, and migrate with confidence.",
 	"main": "dist/index.js",
 	"module": "dist/index.mjs",
