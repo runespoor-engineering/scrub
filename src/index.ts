@@ -6,7 +6,7 @@ import { check } from "./commands/check";
 import { checkStaged } from "./commands/checkStaged";
 import { disable } from "./commands/disable";
 
-const cliVersion = "0.0.0";
+const cliVersion = "1.0.1";
 
 program
 	.name("scrub")
