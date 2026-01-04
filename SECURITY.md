@@ -4,7 +4,7 @@
 
 | Package                                                                | Version | Supported          |
 | ---------------------------------------------------------------------- | ------- | ------------------ |
-| [@runespoorstack/scrub](https://www.npmjs.com/package/@runespoorstack/scrub) | 0.1.0   | :white_check_mark: |
+| [@runespoorstack/scrub](https://www.npmjs.com/package/@runespoorstack/scrub) | 1.x.x   | :white_check_mark: |
 
 ## Reporting a Vulnerability
 
