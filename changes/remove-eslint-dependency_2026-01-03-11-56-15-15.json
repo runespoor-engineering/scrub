@@ -1,6 +1,0 @@
-{
-	"comment": "Provide `--disableComment` option to `disable`, `check`, `check-staged` commands. Remove hadrcoded `eslint-disable` disabling comment",
-	"type": "major",
-	"author": "Boris Shuliak",
-	"issueLinks": []
-}
